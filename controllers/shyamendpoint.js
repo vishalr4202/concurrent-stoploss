@@ -51,7 +51,7 @@ exports.shyampoints = (req, res, next) => {
     }
 
 
-    if((order == 'buy' && entry_type == 'CE' && orderPlaced == false && hours<=15 && minutes<=15) || (order == 'sell' && entry_type=='PE' && orderPlaced == false && hours<=15 && minutes<=15) || (entry_type == undefined  && exchange == 'NSE' && order=='buy' && orderPlaced == false && hours<=15 && minutes<=15)){
+    if((order == 'buy' && entry_type == 'CE' && orderPlaced == false ) || (order == 'sell' && entry_type=='PE' && orderPlaced == false ) || (entry_type == undefined  && exchange == 'NSE' && order=='buy' && orderPlaced == false )){
         logger.info('in request')
     const x = new Promise((resolve, reject) => {
         const data = email.map(async (ele, index) => {
@@ -210,18 +210,9 @@ exports.shyampoints = (req, res, next) => {
     })
 }
 else{
-    
-    if( hours>=15 && minutes>15){
-        logger.info("time limit has passed")
-        res.status(200).json({
-            message: "time limit has passed",
-          });
-    }
-  else if(exchange == "NSE" && order == 'sell'){
         logger.info("sell order type not placed")
         res.status(200).json({
             message: "trades cannot be executed as order is sell",
           });
-    }   
  }
 }
