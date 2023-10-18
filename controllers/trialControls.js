@@ -220,9 +220,9 @@ exports.ticksData = (req, res, next) => {
             ticker.on('connect', subscribe)
         }
         function subscribe() {
-            var items = [65610759];
+            // var items = [65610759];
             // var items =[64226055]
-            // var items = [inst_token];
+            var items = [inst_token];
             ticker.subscribe(items);
             ticker.setMode(ticker.modeFull, items);
         }
