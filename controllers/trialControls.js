@@ -49,7 +49,7 @@ exports.ticksData = (req, res, next) => {
         return ordered;
     }
 
-    if((order == 'buy' && entry_type == 'CE' && orderPlaced == false) || (order == 'sell' && entry_type=='PE' &&  orderPlaced == false) || (entry_type == undefined  && exchange == 'NSE' && order=='buy' && orderPlaced == false)){
+    if((order == 'buy' && entry_type == 'CE' && orderPlaced == false) || (order == 'sell' && entry_type=='PE' &&  orderPlaced == false) || (exchange=='MCX') ||(entry_type == undefined  && exchange == 'NSE' && order=='buy' && orderPlaced == false)){
         logger.info('in request')
     const x = new Promise((resolve, reject) => {
         const data = email.map(async (ele, index) => {
@@ -88,13 +88,24 @@ exports.ticksData = (req, res, next) => {
                 return x;
             })
             .then((res) => {
-                logger.info("buy order placed")
+                logger.info(res,"buy order placed")
+                let oId;
                 if(ele == primary){
                     console.log(ele," selected mail")
-                    return kc
-                    .getOrderHistory(res)
+                    oId = res
+                    // return kc
+                    // .getOrderHistory(res)
+                    // .then((res) => {
+                    //     console.log(res,"inside get history")
+                    //     inst_token = res[res?.length - 1]?.instrument_token
+                    // })
+                    // .catch((err) => {
+                    //   console.log(err, "error");
+                    // });
+                    return kc.getQuote(`${exchange}:${tradingsymbol}`)
                     .then((res) => {
-                        inst_token = res[res?.length - 1]?.instrument_token
+                        inst_token = res[`${exchange}:${tradingsymbol}`].instrument_token
+                        return oId
                     })
                     .catch((err) => {
                       console.log(err, "error");
@@ -102,17 +113,29 @@ exports.ticksData = (req, res, next) => {
                 }
                 else{
                    logger.info(`won't fetch ${ele}`)
-                }
+                }               
               }).then(resp => {
-              })
-                .catch(err => {
-                    reject(err)
+                console.log(resp,inst_token,"no insttoken")
+                if(inst_token == undefined && ele == primary){
+                     return kc
+                    .getOrderHistory(resp)
+                    .then((res) => {
+                        inst_token = res[res?.length - 1]?.instrument_token
+                    })
+                    .catch((err) => {
+                      console.log(err, "error");
+                    });
+                }
+              }) .catch(err => {
+                    return reject(err)
+                 
                 })
             if (index === email.length - 1) return resolve({ data, tick_api, tick_access });
         })
 
     }).then(resp => {
         orderPlaced = true;
+        console.log(inst_token,"instokrne")
         logger.info(arr, orderIds, tick_access, tick_api, inst_token,"in tickd")
         let lastPrice = 0
         let stopLoss = 0
@@ -177,13 +200,14 @@ exports.ticksData = (req, res, next) => {
                        
                         logger.info(`r${res},after sell`)
                         orderPlaced = false;
-                        return res
+                        // return res
+                       
                     })
                     .catch(err => {
                         logger.error(`${err},after sell error`)
-                        reject(err)
+                        // reject(err)
+                        // next(err)
                     })
-
             })
             res.status(200).json({
                 message: "trades executed successfully",
@@ -196,9 +220,9 @@ exports.ticksData = (req, res, next) => {
             ticker.on('connect', subscribe)
         }
         function subscribe() {
-            // var items = [65610759];
+            var items = [65610759];
             // var items =[64226055]
-            var items = [inst_token];
+            // var items = [inst_token];
             ticker.subscribe(items);
             ticker.setMode(ticker.modeFull, items);
         }
