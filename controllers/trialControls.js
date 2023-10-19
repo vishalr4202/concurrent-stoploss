@@ -102,9 +102,10 @@ exports.ticksData = (req, res, next) => {
                     // .catch((err) => {
                     //   console.log(err, "error");
                     // });
-                    return kc.getQuote(`${exchange}:${tradingsymbol}`)
+                    return kc.getQuote(`${exchange}:${symbol}`)
                     .then((res) => {
-                        inst_token = res[`${exchange}:${tradingsymbol}`].instrument_token
+                        console.log(res,exchange,tradingsymbol,"inside instruments")
+                        inst_token = res[`${exchange}:${symbol}`].instrument_token
                         return oId
                     })
                     .catch((err) => {
