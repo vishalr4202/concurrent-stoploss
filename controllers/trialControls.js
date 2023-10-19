@@ -25,6 +25,7 @@ exports.ticksData = (req, res, next) => {
     const arr = [];
     const orderIds = [];
     var inst_token;
+    let newKc;
 
     async function regularOrderPlace(variety, symbol, order_type, prices, type) {
         await kc
@@ -54,6 +55,7 @@ exports.ticksData = (req, res, next) => {
     const x = new Promise((resolve, reject) => {
         const data = email.map(async (ele, index) => {
             await User.findByEmailId(ele).then((result) => {
+                // console.log(result,"userResult")
                 api_key = result.api_key;
                 secretkey = result.secret_key;
                 access_token = result.access_token;
@@ -88,55 +90,69 @@ exports.ticksData = (req, res, next) => {
                 return x;
             })
             .then((res) => {
-                logger.info(res,"buy order placed")
+                // logger.info(res,"buy order placed")
+                console.log("buy order placed")
                 let oId;
                 if(ele == primary){
+                    console.log(tick_api)
                     console.log(ele," selected mail")
                     oId = res
-                    // return kc
-                    // .getOrderHistory(res)
-                    // .then((res) => {
-                    //     console.log(res,"inside get history")
-                    //     inst_token = res[res?.length - 1]?.instrument_token
-                    // })
-                    // .catch((err) => {
-                    //   console.log(err, "error");
-                    // });
-                    return kc.getQuote(`${exchange}:${symbol}`)
+                    return kc
+                    .getOrderHistory(res)
                     .then((res) => {
-                        console.log(res,exchange,tradingsymbol,"inside instruments")
-                        inst_token = res[`${exchange}:${symbol}`].instrument_token
-                        return oId
+                        console.log(res,"inside get history")
+                        inst_token = res[res?.length - 1]?.instrument_token
                     })
                     .catch((err) => {
                       console.log(err, "error");
                     });
+                    // return kc.getQuote(`${exchange}:${symbol}`)
+                    // .then((res) => {
+                    //     console.log(res,exchange,symbol,"inside instruments")
+                    //     inst_token = res[`${exchange}:${symbol}`].instrument_token
+                    //     return oId
+                    // })
+                    // .catch((err) => {
+                    //   console.log(err, "error");
+                    // });
+                    
                 }
                 else{
                    logger.info(`won't fetch ${ele}`)
                 }               
               }).then(resp => {
                 console.log(resp,inst_token,"no insttoken")
-                if(inst_token == undefined && ele == primary){
-                     return kc
-                    .getOrderHistory(resp)
+                // if(inst_token == undefined && ele == primary){
+                //      return kc
+                //     .getOrderHistory(resp)
+                //     .then((res) => {
+                //         inst_token = res[res?.length - 1]?.instrument_token
+                //     })
+                //     .catch((err) => {
+                //       console.log(err, "error");
+                //     });
+                // }
+                    return kc.getQuote(`${exchange}:${symbol}`)
                     .then((res) => {
-                        inst_token = res[res?.length - 1]?.instrument_token
+                        console.log(exchange,symbol,"inside instruments")
+                        inst_token = res[`${exchange}:${symbol}`].instrument_token
+                        // return oId
                     })
                     .catch((err) => {
                       console.log(err, "error");
                     });
-                }
-              }) .catch(err => {
-                    return reject(err)
+              }) 
+            //   .catch(err => {
+            //         return reject(err)
                  
-                })
+            //     })
             if (index === email.length - 1) return resolve({ data, tick_api, tick_access });
         })
 
     }).then(resp => {
         orderPlaced = true;
         console.log(inst_token,"instokrne")
+        console.log(arr, orderIds, tick_access, tick_api, inst_token,"in tickd")
         logger.info(arr, orderIds, tick_access, tick_api, inst_token,"in tickd")
         let lastPrice = 0
         let stopLoss = 0
@@ -198,10 +214,9 @@ exports.ticksData = (req, res, next) => {
                         });
                         return x;
                     }).then(res =>{
-                       
                         logger.info(`r${res},after sell`)
                         orderPlaced = false;
-                        // return res
+                        return res
                        
                     })
                     .catch(err => {
