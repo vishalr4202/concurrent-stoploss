@@ -77,7 +77,6 @@ async function placeIndividualTrade(data, exchange, symbol, quantity) {
 async function runTradingStopLoss(user, lossPrice,exits) {
     let lastPrice = 0;
     let stopLoss = 0;
-    let exit = false;
     const status = await (async function (data) {
          ticker = new KiteTicker({
             api_key: user?.api_key,
@@ -104,8 +103,6 @@ async function runTradingStopLoss(user, lossPrice,exits) {
             else if (stopLoss >= ticks[0]?.last_price) {
                 ticker.disconnect()
                 console.log(`will stop,${stopLoss}`)
-                // return stopLoss
-                let api_key, access_token;
                 return exits();
             }
         }
@@ -117,13 +114,12 @@ async function runTradingStopLoss(user, lossPrice,exits) {
             ticker.setMode(ticker.modeFull, items);
         }
     }))
-
     // function over(){
     //     console.log("inside main exit")
     //     return exits()
     // }
-
     // ticker.on('disconnect',() => exits())
+    return lastPrice
 }
 
 async function exitAllUserOrders(users, exchange, symbol, quantity) {
@@ -161,11 +157,13 @@ async function exitIndividualTrade(data, exchange, symbol, quantity) {
                 })
         })
         .catch(err => {
-            // console.log(err, "trade Error")
-            return err.message
+            console.log(err, "trade exit Error")
+            // return err.message
         })
     return status
 }
+
+let ordered = false;
 
 exports.placeOrders = async (req, res, next) => {
     const {
@@ -183,12 +181,8 @@ exports.placeOrders = async (req, res, next) => {
         primary
     } = req.body;
 
-    var ticker;
-    var api_key, secretkey, requestToken, access_token
-    var tick_api
-    var tick_accessvar
-    var symbol
-    var inst_token;
+    var symbol;
+    
 
     if (entry_type === "CE") {
         newPrice = Math.round(Math.floor(price - 200) / 100) * 100;
@@ -200,39 +194,61 @@ exports.placeOrders = async (req, res, next) => {
         symbol = tradingsymbol;
     }
 
+    if((order == 'buy' && entry_type == 'CE' && ordered == false) || (order == 'sell' && entry_type=='PE' &&  ordered == false) || (exchange=='MCX') ||(entry_type == undefined  && exchange == 'NSE' && order=='buy' && ordered == false)){
+    console.log(ordered,"sets")
     const validUsers = []
     for (let i = 0; i < email.length; i++) {
         let valid = await getValidUsers(email[i], exchange, symbol)
         if (valid) {
             validUsers.push(valid)
         }
-    }
-    const orderPlaced = []
-    if (validUsers.length > 0) {
-        for (let i = 0; i < validUsers.length; i++) {
-            let placed = await placeAllUserOrders(validUsers[i], exchange, symbol, quantity)
-            if(placed){
-                console.log (placed,"inplaced")
-                orderPlaced.push(placed);
-            }
+        if(i == email.length - 1){
+            ordered = true
         }
     }
-
-    const exit = await runTradingStopLoss(validUsers[0], lossPrice, exits)
-    const exitmails = []
-
-   async function exits(){
-    console.log(orderPlaced,"placed orders")
-        for (let i = 0; i < orderPlaced.length; i++) {
-        let valid =  await exitAllUserOrders(validUsers[i], exchange, symbol,quantity)
-            if(valid){
-                console.log(orderPlaced[i],"get data")
-                exitmails.push(orderPlaced[i])
+  
+    if(ordered == true){
+        const orderPlaced = []
+        if (validUsers.length > 0) {
+            for (let i = 0; i < validUsers.length; i++) {
+                let placed = await placeAllUserOrders(validUsers[i], exchange, symbol, quantity)
+                if(placed){
+                    console.log (placed,"inplaced")
+                    orderPlaced.push(placed);
+                }
             }
-     }     
-     res.status(200).json({
-        message: "trades executed successfully",
-        users: exitmails
-      });
+        }
+    
+        if(orderPlaced.length > 0){
+            const exit = await runTradingStopLoss(validUsers[0], lossPrice, exits)
+        }
+       
+        const exitmails = []
+    
+       async function exits(){
+        console.log(orderPlaced,"placed orders")
+            for (let i = 0; i < orderPlaced.length; i++) {
+            let valid =  await exitAllUserOrders(validUsers[i], exchange, symbol,quantity)
+                if(valid){
+                    console.log(orderPlaced[i],"get data")
+                    exitmails.push(orderPlaced[i])
+                }
+                console.log(ordered,"ordered")
+                if(i == orderPlaced.length - 1){
+                    ordered = false
+                }
+         } 
+         res.status(200).json({
+            message: "trades executed successfully",
+            users: exitmails
+          });
+        }
     }
+    
+} else{
+    console.log('trade in place already, cannot execute')
+    res.status(200).json({
+        message: "trades cannot be executed",
+      });
+ }
 }
