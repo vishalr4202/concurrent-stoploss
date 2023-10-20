@@ -168,8 +168,12 @@ let ordered = false;
 exports.placeOrders = async (req, res, next) => {
     var body = req.body
     if(typeof req.body == 'string'){
-        console.log(JSON.parse(req.body))
-        body = JSON.parse(req.body)
+        if(req.body.charAt(0) =="\""){
+            body = JSON.parse(req.body.slice(1, -1))
+        }
+        else{
+           body = JSON.parse(req.body)
+        }
     }
     
     const {
@@ -225,8 +229,14 @@ exports.placeOrders = async (req, res, next) => {
             }
         }
     
-        if(orderPlaced.length > 0){
+        if(orderPlaced.length > 0 && orderPlaced[0]?.status != 'error'){
             const exit = await runTradingStopLoss(validUsers[0], lossPrice, exits)
+        }
+        else{
+            ordered = false
+            res.status(200).json({
+                message: orderPlaced[0]?.message,
+              });
         }
        
         const exitmails = []
