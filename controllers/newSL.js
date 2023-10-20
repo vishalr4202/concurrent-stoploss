@@ -166,6 +166,12 @@ async function exitIndividualTrade(data, exchange, symbol, quantity) {
 let ordered = false;
 
 exports.placeOrders = async (req, res, next) => {
+    var body = req.body
+    if(typeof req.body == 'string'){
+        console.log(JSON.parse(req.body))
+        body = JSON.parse(req.body)
+    }
+    
     const {
         price,
         quantity,
@@ -179,7 +185,7 @@ exports.placeOrders = async (req, res, next) => {
         date,
         order,
         primary
-    } = req.body;
+    } = body;
 
     var symbol;
     

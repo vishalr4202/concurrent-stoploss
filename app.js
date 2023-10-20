@@ -27,6 +27,8 @@ if (cluster.isMaster) {
 } else {
   const express = require("express");
   const app = express()
+  var bodyParser = require('body-parser')
+  app.use(bodyParser.text())
   app.use(express.json());
 
   app.use((req, res, next) => {
