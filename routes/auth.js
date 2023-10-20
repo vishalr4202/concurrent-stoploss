@@ -4,7 +4,9 @@ const UserController = require("../controllers/auth");
 const UserActionController = require("../controllers/userActions");
 const TrialController = require("../controllers/trialControls");
 const ShyamController = require("../controllers/shyamendpoint");
+const NewSL = require("../controllers/newSL")
 const UserSchema = require("../validations/validations");
+// const placeOrders = require('../controllers/newSL')
 const IsAuth = require("../middlewares/isAuth");
 const getKeys = require("../middlewares/isAuth");
 const router = express.Router();
@@ -23,5 +25,7 @@ router.post("/placeTrade", UserActionController.placeFirstTrade);
 router.post("/getAllUsers", UserActionController.getAllUsers);
 router.post("/ticksData", TrialController.ticksData)
 router.post("/shyamendpoint", ShyamController.shyampoints)
+// router.post("/newsl", NewSL.newSL)
+router.post('/placeOrders',NewSL.placeOrders)
 
 module.exports = router;
